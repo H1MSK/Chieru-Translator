@@ -4,19 +4,19 @@
  * @brief Implementation of Chieru translator
  * @version 0.1
  * @date 2020-07-20
- * 
+ *
  * @copyright Copyright (c) 2020
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the “Software”), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,38 +26,33 @@
  * THE SOFTWARE.
  */
 #include "chieru_translator.h"
+#include <QMutex>
+#include <QDebug>
 
 bool ChieruTranslator::s_initialized = false;
-wchar_t ChieruTranslator::s_chieru_charactor[16];
-std::map<wchar_t, int> ChieruTranslator::s_dict;
-std::wstring ChieruTranslator::s_symbols(
-    L"！￥…（）—【】、；：‘’“”《》，。？"
+QChar ChieruTranslator::s_chieru_charactor[16];
+QHash<QChar, int> ChieruTranslator::s_dict;
+QString ChieruTranslator::s_symbols = QString::fromUtf16(
+    u"！￥…（）—【】、；：‘’“”《》，。？～｀＃＄％＾＆＊－＿＝＋［］｛｝＼｜＇＂＜＞／"
 );
-
-thread_local std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>
-    ChieruTranslator::s_utf8_utf16_cvt;
 
 ChieruTranslator::ChieruTranslator() {
     initialize();
 }
 
 void ChieruTranslator::initialize() {
-    static std::mutex initialize_mutex;
+    static QMutex initialize_mutex;
     if (s_initialized) return;
 
     initialize_mutex.lock();
     if (s_initialized) return;
 
-    std::wstring chieru_dict = L"切卟叮咧哔唎啪啰啵嘭噜噼巴拉蹦铃";
+    QString chieru_dict = QString::fromUtf16(u"切卟叮咧哔唎啪啰啵嘭噜噼巴拉蹦铃");
+    assert(chieru_dict.length() == 16);
 
-    auto itr = chieru_dict.begin(), _end = chieru_dict.end();
-    int num = 0;
-
-    while (itr != _end) {
-        s_chieru_charactor[num] = *itr;
-        s_dict.insert({*itr, num});
-        ++num;
-        ++itr;
+    for (int i = 0; i < 16; ++i) {
+        s_chieru_charactor[i] = chieru_dict[i];
+        s_dict.insert(chieru_dict[i], i);
     }
 
     s_initialized = true;
@@ -65,114 +60,95 @@ void ChieruTranslator::initialize() {
     initialize_mutex.unlock();
 }
 
-std::string ChieruTranslator::word2chieru(std::wstring::iterator begin,
-                                          std::wstring::iterator end) {
-    std::wstring result = L"切";
+QString ChieruTranslator::word2chieru(QByteArray::const_iterator begin,
+                                      QByteArray::const_iterator end) {
+    QString result = QString::fromUtf16(u"切");
+    assert(result.length() == 1);
+    result.reserve((end - begin) * 2 + 2);
 
     for (; begin != end; ++begin) {
-        wchar_t ch = *begin;
+        char ch = *begin;
         result.push_back(s_chieru_charactor[ch & 15]);
         result.push_back(s_chieru_charactor[(ch & 0xF0)>> 4]);
-        result.push_back(s_chieru_charactor[(ch & 0xF00)>> 8]);
-        result.push_back(s_chieru_charactor[(ch & 0xF000)>> 12]);
     }
 
-    return s_utf8_utf16_cvt.to_bytes(result);
+    return result;
 }
 
-std::string ChieruTranslator::chieru2word(std::wstring::iterator begin,
-                                          std::wstring::iterator end) {
-    std::wstring result;
+QByteArray ChieruTranslator::chieru2word(QString::const_iterator begin,
+                                         QString::const_iterator end) {
+    QByteArray result;
 
     // A chieru word must start with '切', and the next charactors must be in pairs
-    if (end - begin < 3 || !((end - begin) & 1) || *begin != L'切')
+    if ((end - begin) < 2 || !((end - begin) & 1) || *begin != QChar(L'切'))
         return "{ERROR}";
 
     for (auto itr = begin + 1; itr != end;) {
-        wchar_t code;
+        char32_t code;
 
         auto dict_itr = s_dict.find(*itr);
         if (dict_itr == s_dict.end()) return "{ERROR}";
-        code = dict_itr->second;
+        code = dict_itr.value();
         ++itr;
 
         dict_itr = s_dict.find(*itr);
         if (dict_itr == s_dict.end()) return "{ERROR}";
-        code |= dict_itr->second << 4;
-        ++itr;
-
-        dict_itr = s_dict.find(*itr);
-        if (dict_itr == s_dict.end()) return "{ERROR}";
-        code |= dict_itr->second << 8;
-        ++itr;
-
-        dict_itr = s_dict.find(*itr);
-        if (dict_itr == s_dict.end()) return "{ERROR}";
-        code |= dict_itr->second << 12;
+        code |= dict_itr.value() << 4;
         ++itr;
 
         result.push_back(code);
     }
 
-    return s_utf8_utf16_cvt.to_bytes(result);
-}
-
-std::string ChieruTranslator::word2chieru(const std::string& word) {
-    std::wstring u32word = s_utf8_utf16_cvt.from_bytes(word);
-    return word2chieru(u32word.begin(), u32word.end());
-}
-
-std::string ChieruTranslator::chieru2word(const std::string& word) {
-    std::wstring u32word = s_utf8_utf16_cvt.from_bytes(word);
-    return chieru2word(u32word.begin(), u32word.end());
-}
-
-std::string ChieruTranslator::fromUTF8(const std::string& string) {
-    std::wstring wstring = s_utf8_utf16_cvt.from_bytes(string);
-    std::string result = s_utf8_utf16_cvt.to_bytes(L"切噜～♪");
-
-    auto itr = wstring.begin(), start_pos = wstring.begin(),
-         _end = wstring.end();
-
-    while(itr != _end) {
-        if (is_separator(*itr)) {
-            if (start_pos != itr) {
-                result.append(word2chieru(start_pos, itr));
-                start_pos = itr;
-            }
-            ++start_pos;
-            result.append(s_utf8_utf16_cvt.to_bytes(std::wstring(1, *itr)));
-        }
-        ++itr;
-    }
-
-    if (start_pos != _end)
-        result.append(word2chieru(start_pos, _end));
     return result;
 }
 
-std::string ChieruTranslator::toUTF8(const std::string& string) {
-    std::wstring wstring = s_utf8_utf16_cvt.from_bytes(string);
-    std::string result;
+QString ChieruTranslator::word2chieru(const QByteArray& word) {
+    return word2chieru(word.begin(), word.end());
+}
 
-    if (wstring.substr(0, 4) != L"切噜～♪") return "{ERROR}";
+QByteArray ChieruTranslator::chieru2word(const QString& word) {
+    return chieru2word(word.begin(), word.end());
+}
 
-    auto itr = wstring.begin() + 4, start_pos = wstring.begin() + 4,
-         _end = wstring.end();
+QString ChieruTranslator::toChieru(const QString& string, QTextCodec* codec) {
+    QString result = QString::fromUtf16(u"切噜～♪");
+    assert(result.length() == 4);
 
-    while(itr != _end) {
-        if (is_separator(*itr)) {
-            if (start_pos != itr) {
-                result.append(chieru2word(start_pos, itr));
-                start_pos = itr;
+    int i = 0, s = 0;
+    for (int _end = string.length(); i < _end; ++i) {
+        if (is_separator(string[i])) {
+            if (s != i) {
+                result.append(word2chieru(codec->fromUnicode(string.midRef(s, i - s))));
+                s = i;
             }
-            ++start_pos;
-            result.append(s_utf8_utf16_cvt.to_bytes(std::wstring(1, *itr)));
+            ++s;
+            result.push_back(string[i]);
         }
-        ++itr;
     }
 
-    if (start_pos != _end)
-        result.append(chieru2word(start_pos, _end));
+    if (s != string.length())
+        result.append(word2chieru(codec->fromUnicode(string.midRef(s, string.length() - s))));
     return result;
+}
+
+QString ChieruTranslator::fromChieru(const QString& string, QTextCodec* codec) {
+    QByteArray result;
+
+    if (string.left(4) != QString::fromUtf16(u"切噜～♪")) return "{ERROR}";
+
+    int i = 4, s = 4, _end = string.length();
+    for (; i < _end; ++i) {
+        if (is_separator(string[i])) {
+            if (s != i) {
+                result.append(chieru2word(string.begin() + s, string.begin() + i));
+                s = i;
+            }
+            ++s;
+            result.append(codec->fromUnicode(string[i]));
+        }
+    }
+
+    if (s != _end)
+        result.append(chieru2word(string.begin() + s, string.end()));
+    return codec->toUnicode(result);
 }

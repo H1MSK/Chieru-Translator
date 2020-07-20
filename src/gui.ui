@@ -15,11 +15,29 @@
   </property>
   <layout class="QHBoxLayout" name="central_layout">
    <item>
-    <widget class="QPlainTextEdit" name="textedit_original">
-     <property name="placeholderText">
-      <string>原文在这里切噜~</string>
-     </property>
-    </widget>
+    <layout class="QVBoxLayout" name="layout_original">
+     <item>
+      <widget class="QComboBox" name="combo_encode">
+       <item>
+        <property name="text">
+         <string>UTF-8</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>GBK</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPlainTextEdit" name="textedit_original">
+       <property name="placeholderText">
+        <string>原文在这里切噜~</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
     <layout class="QVBoxLayout" name="layout_control">
@@ -74,11 +92,24 @@
     </layout>
    </item>
    <item>
-    <widget class="QPlainTextEdit" name="textedit_translated">
-     <property name="placeholderText">
-      <string>切噜～♪</string>
-     </property>
-    </widget>
+    <layout class="QVBoxLayout" name="layout_translated">
+     <item>
+      <widget class="QComboBox" name="combo_chieru">
+       <item>
+        <property name="text">
+         <string>切噜～♪</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPlainTextEdit" name="textedit_translated">
+       <property name="placeholderText">
+        <string>切噜～♪</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>

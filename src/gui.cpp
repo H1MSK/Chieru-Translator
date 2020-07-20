@@ -36,7 +36,6 @@
 #include <QLabel>
 #include <QGraphicsOpacityEffect>
 #include <QDebug>
-
 #include <QFontDatabase>
 
 #include <cstdlib>
@@ -51,7 +50,8 @@ TranslatorWidget::TranslatorWidget(QWidget *parent)
     , m_horizontal_background(nullptr)
     , m_vertical_background(nullptr)
     , m_current_background(nullptr)
-    , m_background_label(new QLabel(this)) {
+    , m_background_label(new QLabel(this))
+    , m_current_codec(QTextCodec::codecForName("UTF8")) {
     ui->setupUi(this);
 
     srand(QDateTime::currentMSecsSinceEpoch());
@@ -84,6 +84,8 @@ TranslatorWidget::TranslatorWidget(QWidget *parent)
     ui->textedit_original->setFont(f);
     ui->textedit_translated->setFont(f);
 #endif
+
+    ui->combo_chieru->hide();
 
     updateUI();
 }
@@ -138,25 +140,21 @@ void TranslatorWidget::updateUI() {
 }
 
 void TranslatorWidget::on_button_from_string_clicked() {
-    std::string original_string = ui->textedit_original->toPlainText()
-                                        .toUtf8().toStdString();
-
-    QString translated_string = QString::fromUtf8(
-                QByteArray::fromStdString(
-                    m_translator->fromUTF8(original_string)));
+    QString translated_string =
+            m_translator->toChieru(ui->textedit_original->toPlainText(), m_current_codec);
 
     ui->textedit_translated->setPlainText(translated_string);
 }
 
 void TranslatorWidget::on_button_to_string_clicked() {
-    std::string translated_string = ui->textedit_translated->toPlainText()
-                                        .toUtf8().toStdString();
-
-    QString origianl_string = QString::fromUtf8(
-                QByteArray::fromStdString(
-                    m_translator->toUTF8(translated_string)));
+    QString origianl_string =
+            m_translator->fromChieru(ui->textedit_translated->toPlainText(), m_current_codec);
 
     ui->textedit_original->setPlainText(origianl_string);
+}
+
+void TranslatorWidget::on_combo_encode_currentIndexChanged(const QString &arg1) {
+    m_current_codec = QTextCodec::codecForName(arg1.toUtf8());
 }
 
 int main(int argc, char *argv[]) {

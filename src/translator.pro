@@ -20,7 +20,6 @@ SOURCES += \
     gui.cpp
 
 HEADERS += \
-    abstract_translator.h \
     chieru_translator.h \
     gui.h \
     singleton.h
