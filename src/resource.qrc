@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/">
+        <file>imgs/chieruh0.png</file>
+        <file>imgs/chierui0.ico</file>
+        <file>imgs/chierui0.png</file>
+        <file>imgs/chierui1.png</file>
+        <file>imgs/chieruv0.png</file>
+        <file>imgs/chieruv1.png</file>
+        <file>imgs/chieruv2.png</file>
+        <file>imgs/chieruv3.png</file>
+        <file>imgs/chieruv4.png</file>
+        <file>fonts/FeiGunGun.ttf</file>
+    </qresource>
+</RCC>
