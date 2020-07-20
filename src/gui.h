@@ -33,7 +33,8 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class EncoderWidget; }
 QT_END_NAMESPACE
 
-class AbstractTranslator;
+class ChieruTranslator;
+class QTextCodec;
 class QPixmap;
 class QLabel;
 
@@ -54,10 +55,13 @@ private slots:
 
     void updateUI();
 
+    void on_combo_encode_currentIndexChanged(const QString &arg1);
+
 private:
 
     Ui::EncoderWidget *ui;
-    AbstractTranslator *m_translator;
+    ChieruTranslator *m_translator;
     QPixmap *m_horizontal_background, *m_vertical_background, *m_current_background;
     QLabel* m_background_label;
+    QTextCodec *m_current_codec;
 };

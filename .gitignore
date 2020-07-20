@@ -1,6 +1,9 @@
 # VS code configurations
 .vscode
 
+# Release files
+releases
+
 # C++ objects and libs
 *.slo
 *.lo
