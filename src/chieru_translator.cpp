@@ -134,7 +134,8 @@ QString ChieruTranslator::toChieru(const QString& string, QTextCodec* codec) {
 QString ChieruTranslator::fromChieru(const QString& string, QTextCodec* codec) {
     QByteArray result;
 
-    if (string.left(4) != QString::fromUtf16(u"切噜～♪")) return "{ERROR}";
+    if (string.left(4) != QString::fromUtf16(u"切噜～♪"))
+        return QString::fromUTF8("啥？ 你突然说什么啊……不敢相信，太差劲了……");
 
     int i = 4, s = 4, _end = string.length();
     for (; i < _end; ++i) {
